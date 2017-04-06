@@ -123,9 +123,9 @@ int main()
         {
             if (i == 0) { continue; }
 
-            try // stoi 비정상 동작시 예외 검사위해
+            try // stod 비정상 동작시 예외 검사위해
             {
-                stockData[line].push_back(static_cast<double>(stoi(stringlist[i])));
+                stockData[line].push_back(static_cast<double>(stod(stringlist[i])));
             }
             catch (...)
             {
@@ -148,48 +148,63 @@ int main()
         {
             if (i == j)
             {
-                matrix[i][j] = 1.0;
+                matrix[i][j] = 0.0;
             }
             else
             {
-                matrix[i][j] = CorrelationCoefficient(stockData[i], stockData[j]); // 2개의 data로부터 correlation coefficion 계산
+                matrix[i][j] = 1.0 - CorrelationCoefficient(stockData[i], stockData[j]); // 2개의 data로부터 correlation coefficion 계산
             }
         }
     }
 
-    double validcoef = 0.5;
 
-    // 데이터 중복 체크용
-    set<int> duplicateCheker;
+    double validcoef = 0.01;
 
     map<int, int> dataChecker;
 
-    map< int, vector<int> > dataMap;
-
-    vector< set<int> >cluster;
-    for (int i = 0; i < size; ++i)
+    int iter = 0;
+    while (true)
     {
-        for (int j = 0; j < size; ++j)
-        {
-            if (i < j)
-            {
-                if (matrix[i][j] - validcoef > DOUBLE_PRECISION)
-                {
-                    auto itr = dataChecker.find(j);
-                    if (itr != dataChecker.end()) // map에 등록된 값이 아닌 경우
-                    {
-                        dataMap.insert(map< int, vector<int> >::value_type(i, vector<int>{ j }));
-                    }
-                    else // map에 등록된 값인 경우
-                    {
-                        dataMap[itr->second].push_back(j);
-                    }
+        // 데이터 중복 체크용
+        set<int> duplicateCheker;
 
-                    dataChecker.insert(map<int, int>::value_type(j, i));
+        dataChecker.clear();
+
+        map< int, vector<int> > dataMap;
+
+        vector< set<int> >cluster;
+        for (int i = 0; i < size; ++i)
+        {
+            for (int j = 0; j < size; ++j)
+            {
+                if (i < j)
+                {
+                    if (matrix[i][j] - validcoef > DOUBLE_PRECISION)
+                    {
+                        auto itr = dataChecker.find(j);
+                        if (itr != dataChecker.end()) // map에 등록된 값이 아닌 경우
+                        {
+                            dataMap[itr->second].push_back(j);
+                        }
+                        else // map에 등록된 값인 경우
+                        {
+                            dataMap.insert(map< int, vector<int> >::value_type(i, vector<int>{ j }));
+                        }
+
+                        dataChecker.insert(map<int, int>::value_type(j, i));
+                    }
                 }
             }
+
         }
+
+        if (dataChecker.size() < 5) { break; }
+
+        validcoef += 0.1;
+        ++iter;
     }
+
+    
 
     TestCorrelationCoefficient();
 
